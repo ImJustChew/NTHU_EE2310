@@ -33,6 +33,8 @@
     "**/.vscode/**"
   ],
   "files.associations": {
-    "stdio.h": "c"
+    "stdio.h": "c",
+    "numeric": "cpp",
+    "iostream": "cpp"
   }
 }

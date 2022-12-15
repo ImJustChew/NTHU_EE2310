@@ -36,6 +36,7 @@
     "stdio.h": "c",
     "numeric": "cpp",
     "iostream": "cpp",
-    "iosfwd": "cpp"
+    "iosfwd": "cpp",
+    "ostream": "cpp"
   }
 }

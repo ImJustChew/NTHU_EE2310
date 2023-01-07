@@ -29,7 +29,7 @@ void Time::output (){
 }
 
 
-class GlobalTime: Time{
+class GlobalTime: public Time {
     protected:
         int offset;
     public:

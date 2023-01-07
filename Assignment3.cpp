@@ -7,7 +7,6 @@
 
 using namespace std;
 
-
 enum Type
 {
     NUM,
@@ -63,7 +62,7 @@ Operator opdef[] = {
     Operator("/", 4, LTR, [](double a, double b)
              { return a / b; }),
     Operator("^", 5, LTR, [](double a, double b)
-             { return pow(a,b); }),
+             { return pow(a, b); }),
     Operator("sin", 5, NONE, [](double a, double b)
              { return sin(a); }),
     Operator("cos", 5, NONE, [](double a, double b)
@@ -79,7 +78,7 @@ Operator opdef[] = {
     Operator(")", 5, NONE, [](double a, double b)
              { return 0.0; }),
 };
- 
+
 class Token
 {
 private:
@@ -139,9 +138,9 @@ Expression::Expression()
 void Expression::input()
 {
     getline(cin, expr);
-    //regex to detect log_{base}(number), capture base and number
+    // regex to detect log_{base}(number), capture base and number
     regex log_regex("log_\\{([0-9]+)\\}\\(([0-9]+)\\)");
-    expr = regex_replace(expr, log_regex, "(log($2)/log($1))"); //normalize log, replace with log(number)/log(base)
+    expr = regex_replace(expr, log_regex, "(log($2)/log($1))"); // normalize log, replace with log(number)/log(base)
 }
 
 void Expression::eval()
@@ -150,7 +149,6 @@ void Expression::eval()
     for (int i = 0; i < expr.size(); i++)
     {
         // If the current character is a digit or a period, parse the number and push it onto the operands stack
-        cout << "read: " << expr[i] << endl;
         if (isdigit(expr[i]) || expr[i] == '.')
         {
             char *endptr;
@@ -161,55 +159,30 @@ void Expression::eval()
         }
         else
         {
-            //check if its - and if it is unary
+            // check if its - and if it is unary
             if (expr[i] == '-' && unary)
             {
-                cout << "found a unary -" << endl;
                 operators.push(Token(OP, opdef[2]));
             }
-            else if(expr[i] == ')') {
-                cout << "found a )" << endl;
-                cout << "operands: ";
-                stack<Token> temp = operands;
-                while (!temp.empty())
+            else if (expr[i] == ')')
+            {
+                while (operators.top().op.op != "(")
                 {
-                    cout << temp.top().value << " ";
-                    temp.pop();
-                }
-
-                cout << endl
-                    << "operators: ";
-                temp = operators;
-                while (!temp.empty())
-                {
-                    cout << temp.top().op.op << " ";
-                    temp.pop();
-                }
-                cout << endl;
-                while(operators.top().op.op != "(") {
                     partial_eval();
                 }
                 operators.pop();
                 unary = false;
-            } else {
+            }
+            else
+            {
                 // check if it is an operator
                 for (int j = 0; j < sizeof(opdef) / sizeof(opdef[0]); j++)
                 {
                     if (isOp(expr, i, opdef[j]))
                     {
-                        //add operator to the operator stack
-                        cout << "found an operator " << j << endl;
-                        cout << "operator is " << opdef[j].op << endl;
-
-                        // // check precedence
-                        if (!operators.empty())
+                        while (!operators.empty() && opdef[j].precedence < operators.top().op.precedence && operators.top().op.op != "(")
                         {
-                            cout << "checking precedence" << endl;
-                            while (!operators.empty() && opdef[j].precedence < operators.top().op.precedence && operators.top().op.op != "(")
-                            {
-                                cout << "precedence is lower, evaluating" << endl;
-                                partial_eval();
-                            }
+                            partial_eval();
                         }
 
                         operators.push(Token(OP, opdef[j]));
@@ -218,32 +191,10 @@ void Expression::eval()
                         break;
                     }
                 }
-
             }
         }
     }
-    //debug, print out both stacks, dont modify stack
-    cout << "operands: ";
-    stack<Token> temp = operands;
-    while (!temp.empty())
-    {
-        cout << temp.top().value << " ";
-        temp.pop();
-    }
 
-    cout << endl
-         << "operators: ";
-    temp = operators;
-    while (!temp.empty())
-    {
-        cout << temp.top().op.op << " ";
-        temp.pop();
-    }
-    cout << endl;
-
-    // pop the operator from the operator stack and the two operands from the operand stack
-    // perform the operation and push the result to the operand stack
-    // repeat until the operator stack is empty
     while (!operators.empty())
     {
         partial_eval();
@@ -258,10 +209,11 @@ void Expression::partial_eval()
     Token op = operators.top();
     operators.pop();
 
-    if(op.op.associativity == NONE) {
+    if (op.op.associativity == NONE)
+    {
         Token op1 = operands.top();
         operands.pop();
-        cout << "[EVAL]: " << op.op.op << " " << op1.value << "=" << op.op.func(op1.value, 0) << endl;
+        // cout << "[EVAL]: " << op.op.op << " " << op1.value << "=" << op.op.func(op1.value, 0) << endl;
         operands.push(Token(NUM, op.op.func(op1.value, 0)));
         return;
     }
@@ -270,7 +222,7 @@ void Expression::partial_eval()
     operands.pop();
     Token op1 = operands.top();
     operands.pop();
-    cout << "[EVAL]: " << op1.value << " " << op.op.op << " " << op2.value << "=" << op.op.func(op1.value, op2.value) << endl;
+    // cout << "[EVAL]: " << op1.value << " " << op.op.op << " " << op2.value << "=" << op.op.func(op1.value, op2.value) << endl;
     operands.push(Token(NUM, op.op.func(op1.value, op2.value)));
 }
 

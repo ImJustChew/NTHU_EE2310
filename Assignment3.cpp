@@ -7,15 +7,15 @@
  *
  * @copyright Copyright (c) 2023
  *
- * \note Compile with -std=c++11 or higher, the code is formatted with Google's Coding Guidelines
+ * \note The code is formatted with Google's Coding Guidelines
  */
-#include <bits/stdc++.h>
-
 #include <algorithm>
 #include <cmath>
 #include <iostream>
 #include <stack>
 #include <string>
+
+// #define DEBUG // Uncomment this line to enable debug mode
 
 using namespace std;
 
@@ -27,9 +27,11 @@ enum Type {
 
 /* Enum for Associativity Type*/
 enum assoc {
-    ASSOC, // for binary operators
-    NONE  // for unary operators
+    ASSOC,  // for binary operators
+    NONE    // for unary operators
 };
+
+typedef double (*op_func)(double x, double y);
 
 /**
  * Defines an operator and its properties, including precedence and associativity
@@ -48,16 +50,15 @@ class Operator {
     string name;
     int precedence;
     assoc associativity;
-    /** 
-     * func is ptr to defined function, is nullptr if not required. 
+    /**
+     * func is ptr to defined function, is NULL if not required.
      * if associativity is NONE, func is called with only one argument, the second = 0 but should be ignored.
      **/
-    double (*func)(double x, double y);
+    op_func func;
 
    public:
     Operator();
-    Operator(string _op, int _precedence, assoc _associativity,
-             double (*func)(double, double));
+    Operator(string _op, int _precedence, assoc _associativity, op_func _func);
     friend bool isOp(string s, int i, Operator &op);
     friend class Expression;
 };
@@ -66,15 +67,72 @@ Operator::Operator() {
     name = "";
     precedence = 0;
     associativity = NONE;
-    func = nullptr;
+    func = NULL;
 }
 
-Operator::Operator(string _op, int _precedence, assoc _associativity,
-                   double (*_func)(double, double)) {
+Operator::Operator(string _op, int _precedence, assoc _associativity, op_func _func) {
     name = _op;
     precedence = _precedence;
     associativity = _associativity;
     func = _func;
+}
+
+// The following code is only valid for C++11 and above, as it uses lambda expressions. Thus it is commented out.
+// /**
+//  * Array of implemented operators, makes it easier to add new operators
+//  * Example:
+//  *    if you want to add a new operator, say "mod", with precedence 2, associativity ASSOC
+//  *    add the following line to the array:
+//  *    Operator("mod", 2, ASSOC, [](double a, double b) { return a % b; })
+//  */
+// Operator opdef[] = {
+//     /* Operator(name, precedence, associativity, func) */
+//     Operator("+", 1, ASSOC, [](double a, double b) { return a + b; }),
+//     Operator("-", 1, ASSOC, [](double a, double b) { return a - b; }),
+//     Operator("-", 2, NONE, [](double a, double b) { return -a; }),
+//     Operator("*", 3, ASSOC, [](double a, double b) { return a * b; }),
+//     Operator("/", 4, ASSOC, [](double a, double b) { return a / b; }),
+//     Operator("^", 5, ASSOC, [](double a, double b) { return pow(a, b); }),
+//     Operator("sin", 5, NONE, [](double a, double b) { return sin(a); }),
+//     Operator("cos", 5, NONE, [](double a, double b) { return cos(a); }),
+//     Operator("tan", 5, NONE, [](double a, double b) { return tan(a); }),
+//     Operator("sqrt", 5, NONE, [](double a, double b) { return sqrt(a); }),
+//     Operator("log", 5, NONE, [](double a, double b) { return log(a); }),
+//     Operator("(", 5, NONE, /* Empty Function */ NULL),
+//     Operator(")", 5, NONE, /* Empty Function */ NULL),
+// };
+
+// A C++11 compatible version of the above code
+
+double add(double a, double b) {
+    return a + b;
+}
+double sub(double a, double b) {
+    return a - b;
+}
+double neg(double a, double b) {
+    return -a;
+}
+double mul(double a, double b) {
+    return a * b;
+}
+double div(double a, double b) {
+    return a / b;
+}
+double _sin(double a, double b) {
+    return sin(a);
+}
+double _cos(double a, double b) {
+    return cos(a);
+}
+double _tan(double a, double b) {
+    return tan(a);
+}
+double _sqrt(double a, double b) {
+    return sqrt(a);
+}
+double _log(double a, double b) {
+    return log(a);
 }
 
 /**
@@ -82,23 +140,23 @@ Operator::Operator(string _op, int _precedence, assoc _associativity,
  * Example:
  *    if you want to add a new operator, say "mod", with precedence 2, associativity ASSOC
  *    add the following line to the array:
- *    Operator("mod", 2, ASSOC, [](double a, double b) { return a % b; })
+ *    Operator("mod", 2, ASSOC, &mod)
  */
 Operator opdef[] = {
     /* Operator(name, precedence, associativity, func) */
-    Operator("+", 1, ASSOC, [](double a, double b) { return a + b; }),
-    Operator("-", 1, ASSOC, [](double a, double b) { return a - b; }),
-    Operator("-", 2, NONE, [](double a, double b) { return -a; }),
-    Operator("*", 3, ASSOC, [](double a, double b) { return a * b; }),
-    Operator("/", 4, ASSOC, [](double a, double b) { return a / b; }),
-    Operator("^", 5, ASSOC, [](double a, double b) { return pow(a, b); }),
-    Operator("sin", 5, NONE, [](double a, double b) { return sin(a); }),
-    Operator("cos", 5, NONE, [](double a, double b) { return cos(a); }),
-    Operator("tan", 5, NONE, [](double a, double b) { return tan(a); }),
-    Operator("sqrt", 5, NONE, [](double a, double b) { return sqrt(a); }),
-    Operator("log", 5, NONE, [](double a, double b) { return log(a); }),
-    Operator("(", 5, NONE, /* Empty Function */ nullptr),
-    Operator(")", 5, NONE, /* Empty Function */ nullptr),
+    Operator("+", 1, ASSOC, add),
+    Operator("-", 1, ASSOC, sub),
+    Operator("-", 2, NONE, neg),
+    Operator("*", 3, ASSOC, mul),
+    Operator("/", 4, ASSOC, div),
+    Operator("^", 5, ASSOC, pow),
+    Operator("sin", 5, NONE, _sin),
+    Operator("cos", 5, NONE, _cos),
+    Operator("tan", 5, NONE, _tan),
+    Operator("sqrt", 5, NONE, _sqrt),
+    Operator("log", 5, NONE, _log),
+    Operator("(", 5, NONE, /* Empty Function */ NULL),
+    Operator(")", 5, NONE, /* Empty Function */ NULL),
 };
 
 /**
@@ -195,11 +253,36 @@ Expression::Expression() { expr = ""; }
  */
 void Expression::input() {
     getline(cin, expr);
-    // regex to detect log_{base}(number), capture base and number
-    regex log_regex("log_\\{([0-9]+)\\}\\(([0-9]+)\\)");
-    expr = regex_replace(expr, log_regex,
-                         "(log($2)/log($1))");  // normalize log, replace with
-                                                // log(number)/log(base)
+
+    // The code below is commented as it is not supported in C++98
+    // // regex to detect log_{base}(number), capture base and number
+    // regex log_regex("log_\\{([0-9]+)\\}\\(([0-9]+)\\)");
+    // expr = regex_replace(expr, log_regex,
+    //                      "(log($2)/log($1))");  // normalize log, replace with
+    //                                             // log(number)/log(base)
+    // C++98 has no regex, so we need to use a workaround
+    // The following code is a workaround for the regex_replace function
+    // It is not as efficient as the regex_replace function, but it works
+
+    //Find all instances of log_{base}(number)
+    int pos = 0;
+    while ((pos = expr.find("log_{", pos)) != string::npos) {
+        //Find the base
+        int base_start = pos + 5;
+        int base_end = expr.find("}", base_start);
+        string base = expr.substr(base_start, base_end - base_start);
+
+        //Find the number
+        int num_start = base_end + 2;
+        int num_end = expr.find(")", num_start);
+        string num = expr.substr(num_start, num_end - num_start);
+
+        //Replace the log_{base}(number) with (log(number)/log(base))
+        expr.replace(pos, num_end - pos + 1, "(log(" + num + ")/log(" + base + "))");
+
+        //Move pos to the end of the replacement
+        pos += 16 + base.length() + num.length();
+    }
 }
 
 /**
@@ -276,21 +359,29 @@ void Expression::eval() {
 void Expression::partial_eval() {
     Token operator_token = operators.top();
     operators.pop();
-
     // If the operator is not associative, we only need to pop one operand
     if (operator_token.op.associativity == NONE) {
         Token op1 = operands.top();
         operands.pop();
+
+        #ifdef DEBUG
+        cout << "[EVAL:] " << op1.value << " " << operator_token.op.name << "=" << operator_token.op.func(op1.value, 0) << endl;
+        #endif
+
         // Evaluate the operator and push the result onto the operands stack
         operands.push(Token(NUM, operator_token.op.func(op1.value, 0)));
         return;
-    }
-    else {
+    } else {
         // If the operator is associative, we need to pop two operands
         Token op2 = operands.top();
         operands.pop();
         Token op1 = operands.top();
         operands.pop();
+
+        #ifdef DEBUG
+        cout << "[EVAL:] " << op1.value << " " << operator_token.op.name << " " << op2.value << "=" << operator_token.op.func(op1.value, op2.value) << endl;
+        #endif
+
         // Evaluate the operator and push the result onto the operands stack
         operands.push(Token(NUM, operator_token.op.func(op1.value, op2.value)));
     }
